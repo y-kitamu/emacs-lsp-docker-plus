@@ -4,7 +4,7 @@
 * Usage
 - clone the repo
 #+BEGIN_SRC shell
-git clone
+git clone https://github.com/y-kitamu/emacs-lsp-docker-plus.git
 #+END_SRC
 
 - add settings in your `init.el` file.
@@ -16,7 +16,7 @@ git clone
   )
 #+END_SRC
 
-- create `.dir-locals.el` to project root directory.
+- create `.dir-locals.el` to your project root directory. An example is as follows.
 #+BEGIN_SRC emacs-lisp
 ((python-mode
   . (
