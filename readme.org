@@ -1,7 +1,8 @@
-* Description
+* lsp-docker+
+** Description
 `lsp-docker+` is convenient wrapper of [[https://github.com/emacs-lsp/lsp-docker][`lsp-docker`]].
 
-* Usage
+** Usage
 - clone the repo
 #+BEGIN_SRC shell
 git clone https://github.com/y-kitamu/emacs-lsp-docker-plus.git
