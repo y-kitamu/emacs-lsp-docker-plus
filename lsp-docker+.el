@@ -26,11 +26,12 @@
 ;;; Code:
 
 (require 'dash)
-(require 'lsp)
+(require 'lsp-mode)
 (require 'lsp-docker)
 
 (defgroup lsp-docker+ nil
-  "Convenient wrapper for lsp-docker")
+  "Convenient wrapper for lsp-docker"
+  :group 'convenience)
 
 (defcustom lsp-docker+-server-id nil
   "Server id of the lsp-mode client whose configuration is replicated to create new clients."
@@ -91,6 +92,7 @@ This function register docker lsp client
 using variables defined in .dir-locals.el.
 Argument REST is arguments of original function (`lsp')
 and not used in this function."
+  (ignore rest)
   (hack-dir-local-variables-non-file-buffer)
   (cond ((-any? 'null (list lsp-docker+-server-id
                             lsp-docker+-docker-server-id
@@ -129,6 +131,7 @@ launch-server-cmd-fn  -> `lsp-docker+-server-cmd-fn'
 
 I wrote this function because `lsp-docker-register-client'
 don't work well with Rust langauge servers."
+  (ignore rest)
   (message (lsp-docker+-format "Start register lsp-docker client.
   docker-container-name = %s, docker-image-id = %s
   server-id = %s, docker-server-id = %s, server-command = %s"
@@ -202,7 +205,8 @@ don't work well with Rust langauge servers."
                   (lsp-docker+-container-name (or docker-container-name default-docker-container-name))
                   (lsp-docker+-server-command server-command)
                   (lsp-docker+-path-mappings path-mappings)
-                  (lsp-docker+-server-cmd-fn #'lsp-docker-launch-new-container))
+                  (lsp-docker+-server-cmd-fn #'lsp-docker-launch-new-container)
+                  (lsp-docker+-priority priority))
               (lsp-docker+-register-client))
             )
    client-configs)

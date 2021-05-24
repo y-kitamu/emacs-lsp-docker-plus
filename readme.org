@@ -1,6 +1,6 @@
 * lsp-docker+
 ** Description
-`lsp-docker+` is convenient wrapper of [[https://github.com/emacs-lsp/lsp-docker][`lsp-docker`]].
+/lsp-docker+/ is convenient wrapper of [[https://github.com/emacs-lsp/lsp-docker][lsp-docker]].
 
 ** Usage
 - clone the repo
@@ -8,7 +8,7 @@
 git clone https://github.com/y-kitamu/emacs-lsp-docker-plus.git
 #+END_SRC
 
-- add settings in your `init.el` file.
+- add settings in your ~init.el~ file.
 #+BEGIN_SRC  emacs-lisp
 (use-package lsp-docker+
   :load-path "<path-to-lsp-docker+>"
@@ -17,7 +17,7 @@ git clone https://github.com/y-kitamu/emacs-lsp-docker-plus.git
   )
 #+END_SRC
 
-- create `.dir-locals.el` to your project root directory. An example is as follows.
+- create ~.dir-locals.el~ to your project root directory. An example is as follows.
 #+BEGIN_SRC emacs-lisp
 ((python-mode
   . (
