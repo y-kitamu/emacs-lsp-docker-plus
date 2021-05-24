@@ -34,7 +34,8 @@
   :group 'convenience)
 
 (defcustom lsp-docker+-server-id nil
-  "Server id of the lsp-mode client whose configuration is replicated to create new clients."
+  "Server id of the lsp-mode client
+whose configuration is replicated to create new clients."
   :type 'symbol
   :safe #'symbolp)
 
@@ -56,7 +57,8 @@
 (defcustom lsp-docker+-docker-options ""
   "Additional docker command options.
 The options would be added just before docker image id.
-docker run --name <container name> --rm -i <path-mappings> <additional options> <image id> <command>"
+docker run --name <container name> --rm \\
+ -i <path-mappings> <additional options> <image id> <command>"
   :type 'string
   :safe #'stringp)
 
