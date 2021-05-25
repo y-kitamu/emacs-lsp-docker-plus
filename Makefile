@@ -20,7 +20,6 @@ unix-compile:
 		-f batch-byte-compile $(PACKAGE_FILES)
 
 unix-test:
-	$(CASK) exec $(EMACS) -batch -L . $(LOAD_PACKAGE_FILES) -f checkdoc  # No error will occure
 	$(CASK) exec $(EMACS) -batch -L . $(LOAD_PACKAGE_FILES) \
 		--eval "(require 'package-lint)" -f package-lint-batch-and-exit
 	$(CASK) exec $(EMACS) -batch -L . $(LOAD_TEST_FILES) -f ert-run-tests-batch-and-exit
