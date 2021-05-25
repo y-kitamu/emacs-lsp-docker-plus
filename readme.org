@@ -1,7 +1,9 @@
 * lsp-docker+
 ** Description
 /lsp-docker+/ is convenient wrapper of [[https://github.com/emacs-lsp/lsp-docker][lsp-docker]].
+
 This package make it easier to switch language server via settings in ~.dir-locals.el~.
+
 You can easily use the actual development environment (docker image) as language server.
 
 ** Usage
