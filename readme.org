@@ -1,6 +1,8 @@
 * lsp-docker+
 ** Description
 /lsp-docker+/ is convenient wrapper of [[https://github.com/emacs-lsp/lsp-docker][lsp-docker]].
+This package make it easier to switch language server via settings in ~.dir-locals.el~.
+You can easily use the actual development environment (docker image) as language server.
 
 ** Usage
 - clone the repo
@@ -17,7 +19,8 @@ git clone https://github.com/y-kitamu/emacs-lsp-docker-plus.git
   )
 #+END_SRC
 
-- create ~.dir-locals.el~ to your project root directory. An example is as follows.
+- create ~.dir-locals.el~ to your project root directory.
+ Configurable variables are similar to these of ~lsp-docker~. An example is as follows.
 #+BEGIN_SRC emacs-lisp
 ((python-mode
   . (
@@ -26,6 +29,7 @@ git clone https://github.com/y-kitamu/emacs-lsp-docker-plus.git
      (lsp-docker+-server-command . "pyright-langserver --stdio")
      (lsp-docker+-image-id . "<docker-image-id>")
      (lsp-docker+-container-name . "py-lsp-docker")
+     (lsp-docker+-priority. 10)
      (lsp-docker+-path-mappings . (("<path-to-project-root>" . "/project/")))
      ))
  (c++-mode
@@ -35,6 +39,16 @@ git clone https://github.com/y-kitamu/emacs-lsp-docker-plus.git
      (lsp-docker+-server-command . "ccls")
      (lsp-docker+-image-id . "<docker-image-id>")
      (lsp-docker+-container-name . "cpp-lsp-docker")
+     (lsp-docker+-priority. 10)
+     (lsp-docker+-path-mappings . (("<path-to-project-root>" . "/project/")))
+     ))
+(rust-mode
+  . (
+     (lsp-docker+-server-id . rust-analyzer)
+     (lsp-docker+-docker-server-id . rust-analyzer-lsp-docker)
+     (lsp-docker+-server-command . "rust-analyzer")
+     (lsp-docker+-image-id . "<docker-image-id>")
+     (lsp-docker+-container-name . "rust-lsp-docker")
      (lsp-docker+-path-mappings . (("<path-to-project-root>" . "/project/")))
      ))
  )
