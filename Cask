@@ -11,4 +11,5 @@
 
 (development
  (depends-on "ert")
- (depends-on "ccls"))
+ (depends-on "ccls")
+ (depends-on "package-lint"))

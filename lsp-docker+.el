@@ -3,7 +3,9 @@
 ;; Copyright (C) 2021  Yusuke Kitamura
 
 ;; Author: Yusuke Kitamura <ymyk6602@gmail.com>
-;; Keywords: language server
+;; URL: https://github.com/y-kitamu/emacs-lsp-docker-plus
+;; Keywords: convenience, language server
+;; Package-Requires: ((emacs "25.1"))
 ;; Version: 0.1.0
 
 ;; This program is free software; you can redistribute it and/or modify
@@ -22,9 +24,12 @@
 ;;; Commentary:
 
 ;; This package wrap lsp-docker (https://github.com/emacs-lsp/lsp-docker) to make settings easier.
+;; This package make it easier to switch language server via settings in .dir-locals.el.
+;; You can easily use an actual development environment (docker image) as language server.
 
 ;;; Code:
 
+(require 'cl-lib)
 (require 'dash)
 (require 'lsp-mode)
 (require 'lsp-docker)
@@ -99,8 +104,7 @@ and not used in this function."
   (cond ((-any? 'null (list lsp-docker+-server-id
                             lsp-docker+-docker-server-id
                             lsp-docker+-server-command))
-         (message (lsp-docker+-format "Skip registering lsp-docker client. Some args are nil."))
-         )
+         (message (lsp-docker+-format "Skip registering lsp-docker client. Some args are nil.")))
         (t
          (let ((lsp-docker+-image-id (format "%s %s" lsp-docker+-docker-options lsp-docker+-image-id)))
            (lsp-docker+-init-clients
@@ -111,10 +115,7 @@ and not used in this function."
             :client-configs (list
                              (list :server-id lsp-docker+-server-id
                                    :docker-server-id lsp-docker+-docker-server-id
-                                   :server-command lsp-docker+-server-command))))
-         )
-        )
-  )
+                                   :server-command lsp-docker+-server-command)))))))
 
 (cl-defun lsp-docker+-register-client (&rest rest)
   "Advice function of `lsp-docker-register-client'.
@@ -183,12 +184,10 @@ don't work well with Rust langauge servers."
           :async-request-handlers (lsp--client-async-request-handlers client)
           :download-server-fn (lsp--client-download-server-fn client)
           :download-in-progress? (lsp--client-download-in-progress? client)
-          :buffers (lsp--client-buffers client)
-          ))
+          :buffers (lsp--client-buffers client)))
         (message (lsp-docker+-format "Finish register lsp docker client : server-id = %s"
                                      lsp-docker+-server-id)))
-    (user-error (lsp-docker+-format "No such client %s" lsp-docker+-server-id)))
-  )
+    (user-error (lsp-docker+-format "No such client %s" lsp-docker+-server-id))))
 
 (cl-defun lsp-docker+-init-clients
     (&key (path-mappings lsp-docker+-path-mappings)
@@ -218,22 +217,22 @@ CLIENT-CONFIGS is a list of configurations for the clients to be registered."
                   (lsp-docker+-path-mappings path-mappings)
                   (lsp-docker+-server-cmd-fn #'lsp-docker-launch-new-container)
                   (lsp-docker+-priority priority))
-              (lsp-docker+-register-client))
-            )
-   client-configs)
-  )
+              (lsp-docker+-register-client)))
+   client-configs))
 
-(defun enable-lsp-docker+ ()
+;;;###autoload
+(defun lsp-docker+-enable ()
   "Enable lsp-docker+.
 This function add advice function `lsp-docker+-before-lsp' to `lsp'"
   (interactive)
-  (advice-add 'lsp :before 'lsp-docker+-before-lsp))
+  (advice-add #'lsp :before #'lsp-docker+-before-lsp))
 
-(defun disble-lsp-docker+ ()
+;;;###autoload
+(defun lsp-docker+-disable ()
   "Disable lsp-docker+.
 This function remove advice function `lsp-docker+-before-lsp' from `lsp'"
   (interactive)
-  (advice-remove 'lsp 'lsp-docker+-before-lsp))
+  (advice-remove #'lsp #'lsp-docker+-before-lsp))
 
 (provide 'lsp-docker+)
 ;;; lsp-docker+.el ends here
