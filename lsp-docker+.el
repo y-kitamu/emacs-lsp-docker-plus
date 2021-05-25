@@ -34,18 +34,18 @@
   :group 'convenience)
 
 (defcustom lsp-docker+-server-id nil
-  "Server id of the lsp-mode client
-whose configuration is replicated to create new clients."
+  "Server id of the lsp mode client.
+The client's configuration is replicated to create new clients."
   :type 'symbol
   :safe #'symbolp)
 
 (defcustom lsp-docker+-docker-server-id nil
-  "Server id of the created lsp-mode client."
+  "Server id of the created lsp mode client."
   :type 'symbol
   :safe #'symbolp)
 
 (defcustom lsp-docker+-server-command nil
-  "Server command of the created lsp-mode client."
+  "Server command of the created lsp mode client."
   :type 'string
   :safe #'stringp)
 
@@ -197,7 +197,16 @@ don't work well with Rust langauge servers."
 		  (priority lsp-docker+-priority)
 		  (client-packages lsp-docker-default-client-packages)
 		  (client-configs lsp-docker-default-client-configs))
-  "This function works the same as `lsp-docker-init-clients'."
+  "This function works the same as `lsp-docker-init-clients'.
+PATH-MAPPINGS is an alist of mountpoints (<host path> . <docker path>).
+DEFAULT-DOCKER-IMAGE-ID is the identifier for the docker image.
+This variable is used when DOCKER-IMAGE-ID is not defined in CLIENT-CONFIGS.
+DEFAULT-DOCKER-CONTAINER-NAME is the name to use for the container.
+This variable is used when DOCKER-CONTAINER-NAME is not defined
+in CLIENT-CONFIGS.
+PRIORITY is the priority of the lsp mode client.
+CLIENT-PACKAGES is a list of dependent packages.
+CLIENT-CONFIGS is a list of configurations for the clients to be registered."
   (seq-do (lambda (package) (require package nil t)) client-packages)
   (seq-do (-lambda ((&plist :server-id :docker-server-id :docker-image-id
                             :docker-container-name :server-command))
