@@ -106,8 +106,7 @@ and not used in this function."
                             lsp-docker+-server-command))
          (message (lsp-docker+-format "Skip registering lsp-docker client. Some args are nil.")))
         (t
-         (let ((lsp-docker+-image-id (format "%s %s" lsp-docker+-docker-options lsp-docker+-image-id)))
-           (lsp-docker+-init-clients
+         (lsp-docker+-init-clients
             :path-mappings lsp-docker+-path-mappings
             :default-docker-image-id lsp-docker+-image-id
             :default-docker-container-name lsp-docker+-container-name
@@ -115,7 +114,7 @@ and not used in this function."
             :client-configs (list
                              (list :server-id lsp-docker+-server-id
                                    :docker-server-id lsp-docker+-docker-server-id
-                                   :server-command lsp-docker+-server-command)))))))
+                                   :server-command lsp-docker+-server-command))))))
 
 (cl-defun lsp-docker+-register-client (&rest rest)
   "Advice function of `lsp-docker-register-client'.
@@ -143,7 +142,8 @@ don't work well with Rust langauge servers."
   (if-let ((client (gethash lsp-docker+-server-id lsp-clients))
            (docker-command (lsp-docker-launch-new-container
                             lsp-docker+-container-name lsp-docker+-path-mappings
-                            lsp-docker+-image-id lsp-docker+-server-command)))
+                            (format "%s %s" lsp-docker+-docker-options lsp-docker+-image-id)
+                            lsp-docker+-server-command)))
       (progn
         (lsp-register-client
          (make-lsp-client
@@ -154,7 +154,8 @@ don't work well with Rust langauge servers."
                             (lambda ()
                               (funcall (or lsp-docker+-server-cmd-fn #'lsp-docker-launch-new-container)
                                        lsp-docker+-container-name lsp-docker+-path-mappings
-                                       lsp-docker+-image-id lsp-docker+-server-command)))
+                                       (format "%s %s" lsp-docker+-docker-options lsp-docker+-image-id)
+                                       lsp-docker+-server-command)))
                            :test? (lambda (&rest _)
                                     (-any? (-lambda ((dir)) (f-ancestor-of? dir (buffer-file-name)))
                                            lsp-docker+-path-mappings)))
