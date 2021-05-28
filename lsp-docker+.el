@@ -140,7 +140,10 @@ don't work well with Rust langauge servers."
   server-id = %s, docker-server-id = %s, server-command = %s"
                    lsp-docker+-container-name lsp-docker+-image-id
                    lsp-docker+-server-id lsp-docker+-docker-server-id lsp-docker+-server-command))
-  (if-let ((client (gethash lsp-docker+-server-id lsp-clients)))
+  (if-let ((client (gethash lsp-docker+-server-id lsp-clients))
+           (docker-command (lsp-docker-launch-new-container
+                            lsp-docker+-container-name lsp-docker+-path-mappings
+                            lsp-docker+-image-id lsp-docker+-server-command)))
       (progn
         (lsp-register-client
          (make-lsp-client
@@ -186,7 +189,8 @@ don't work well with Rust langauge servers."
           :download-in-progress? (lsp--client-download-in-progress? client)
           :buffers (lsp--client-buffers client)))
         (message (lsp-docker+-format "Finish register lsp docker client : server-id = %s"
-                                     lsp-docker+-server-id)))
+                                     lsp-docker+-server-id))
+        (message (lsp-docker+-format "Docker command = %s" docker-command)))
     (user-error (lsp-docker+-format "No such client %s" lsp-docker+-server-id))))
 
 (cl-defun lsp-docker+-init-clients
