@@ -61,6 +61,7 @@ The client's configuration is replicated to create new clients."
 
 (defcustom lsp-docker+-docker-options ""
   "Additional docker command options.
+Environment variables can be used.
 The options would be added just before docker image id.
 docker run --name <container name> --rm \\
  -i <path-mappings> <additional options> <image id> <command>"
@@ -73,7 +74,8 @@ docker run --name <container name> --rm \\
   :safe #'stringp)
 
 (defcustom lsp-docker+-path-mappings nil
-  "List of docker path mappings."
+  "List of docker path mappings.
+Environment variables can be used."
   :type 'list
   :safe #'listp)
 
@@ -82,7 +84,7 @@ docker run --name <container name> --rm \\
   :type 'integer
   :safe #'integerp)
 
-(defcustom lsp-docker+-server-cmd-fn nil
+(defcustom lsp-docker+-server-cmd-fn #'lsp-docker+-launch-new-container
   "Function to launch language server."
   :type 'function
   :safe #'functionp)
@@ -92,6 +94,12 @@ docker run --name <container name> --rm \\
 FORMAT-STR is format string (first argument of `format').
 REST is list of arguments for format string."
   (concat "lsp-docker :: " (apply 'format format-str rest)))
+
+(defun lsp-docker+-replace-env-vars (path-mappings)
+  "Replace environment variables in `PATH-MAPPINGS'."
+  (-map (-lambda ((path . docker-path))
+		(cons (substitute-in-file-name path) (substitute-in-file-name docker-path)))
+      path-mappings))
 
 (defun lsp-docker+-before-lsp (&rest rest)
   "Advice function of `lsp'.
@@ -116,10 +124,31 @@ and not used in this function."
                                    :docker-server-id lsp-docker+-docker-server-id
                                    :server-command lsp-docker+-server-command))))))
 
-(cl-defun lsp-docker+-register-client (&rest rest)
+(defun lsp-docker+-launch-new-container (&rest _)
+  "Return the docker command to be executed on host.
+This function is advice function of `lsp-docker-launch-new-container'."
+  (cl-incf lsp-docker-container-name-suffix)
+  (let ((command
+         (remove "" (split-string
+                     (format "%s run --name %s-%d --rm -i %s %s %s %s"
+		                     lsp-docker-command
+                             lsp-docker+-container-name
+		                     lsp-docker-container-name-suffix
+		                     (->> lsp-docker+-path-mappings
+			                   (-map (-lambda ((path . docker-path))
+				                       (substitute-in-file-name
+                                        (format "-v %s:%s" path docker-path))))
+			                   (s-join " "))
+                             (substitute-in-file-name lsp-docker+-docker-options)
+		                     lsp-docker+-image-id
+		                     lsp-docker+-server-command)
+                     " "))))
+    (message (lsp-docker+-format "docker command = %s" command))
+    command))
+
+(cl-defun lsp-docker+-register-client (&rest _)
   "Advice function of `lsp-docker-register-client'.
-Argument REST is arguments of original function (`lsp-docker-register-client')
-and not used in this function.
+function (`lsp-docker-register-client') and not used in this function.
 All the arguments usd in original function is replaced by custom variables.
 Correspondence is as follows.
 server-id             -> `lsp-docker+-server-id'
@@ -133,17 +162,13 @@ launch-server-cmd-fn  -> `lsp-docker+-server-cmd-fn'
 
 I wrote this function because `lsp-docker-register-client'
 don't work well with Rust langauge servers."
-  (ignore rest)
-  (message (lsp-docker+-format "Start register lsp-docker client.
+  (message (lsp-docker+-format
+            "Start register lsp-docker client.
   docker-container-name = %s, docker-image-id = %s
   server-id = %s, docker-server-id = %s, server-command = %s"
-                   lsp-docker+-container-name lsp-docker+-image-id
-                   lsp-docker+-server-id lsp-docker+-docker-server-id lsp-docker+-server-command))
-  (if-let ((client (gethash lsp-docker+-server-id lsp-clients))
-           (docker-command (lsp-docker-launch-new-container
-                            lsp-docker+-container-name lsp-docker+-path-mappings
-                            (format "%s %s" lsp-docker+-docker-options lsp-docker+-image-id)
-                            lsp-docker+-server-command)))
+            lsp-docker+-container-name lsp-docker+-image-id
+            lsp-docker+-server-id lsp-docker+-docker-server-id lsp-docker+-server-command))
+  (if-let ((client (gethash lsp-docker+-server-id lsp-clients)))
       (progn
         (lsp-register-client
          (make-lsp-client
@@ -152,13 +177,10 @@ don't work well with Rust langauge servers."
           :new-connection (plist-put
                            (lsp-stdio-connection
                             (lambda ()
-                              (funcall (or lsp-docker+-server-cmd-fn #'lsp-docker-launch-new-container)
-                                       lsp-docker+-container-name lsp-docker+-path-mappings
-                                       (format "%s %s" lsp-docker+-docker-options lsp-docker+-image-id)
-                                       lsp-docker+-server-command)))
+                              (funcall lsp-docker+-server-cmd-fn)))
                            :test? (lambda (&rest _)
                                     (-any? (-lambda ((dir)) (f-ancestor-of? dir (buffer-file-name)))
-                                           lsp-docker+-path-mappings)))
+                                           (lsp-docker+-replace-env-vars lsp-docker+-path-mappings))))
           :ignore-regexps (lsp--client-ignore-regexps client)
           :ignore-messages (lsp--client-ignore-messages client)
           :notification-handlers (lsp--client-notification-handlers client)
@@ -180,9 +202,11 @@ don't work well with Rust langauge servers."
           :initialized-fn (lsp--client-initialized-fn client)
           :remote? (lsp--client-remote? client)
           :completion-in-comments? (lsp--client-completion-in-comments? client)
-          :path->uri-fn (-partial #'lsp-docker--path->uri lsp-docker+-path-mappings)
+          :path->uri-fn (-partial #'lsp-docker--path->uri (lsp-docker+-replace-env-vars
+                                                           lsp-docker+-path-mappings))
           :uri->path-fn (-partial #'lsp-docker--uri->path
-                                  lsp-docker+-path-mappings lsp-docker+-container-name)
+                                  (lsp-docker+-replace-env-vars lsp-docker+-path-mappings)
+                                  lsp-docker+-container-name)
           :environment-fn (lsp--client-environment-fn client)
           :after-open-fn (lsp--client-after-open-fn client)
           :async-request-handlers (lsp--client-async-request-handlers client)
@@ -190,8 +214,7 @@ don't work well with Rust langauge servers."
           :download-in-progress? (lsp--client-download-in-progress? client)
           :buffers (lsp--client-buffers client)))
         (message (lsp-docker+-format "Finish register lsp docker client : server-id = %s"
-                                     lsp-docker+-server-id))
-        (message (lsp-docker+-format "Docker command = %s" docker-command)))
+                                     lsp-docker+-docker-server-id)))
     (user-error (lsp-docker+-format "No such client %s" lsp-docker+-server-id))))
 
 (cl-defun lsp-docker+-init-clients
