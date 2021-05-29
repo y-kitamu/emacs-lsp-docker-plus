@@ -5,7 +5,7 @@
 ;; Author: Yusuke Kitamura <ymyk6602@gmail.com>
 ;; URL: https://github.com/y-kitamu/emacs-lsp-docker-plus
 ;; Keywords: convenience, language server
-;; Package-Requires: ((emacs "25.1") (dash "2.18.1") (lsp-mode "7.0.1") (lsp-docker "0"))
+;; Package-Requires: ((emacs "25.1") (dash "2.18.1") (lsp-mode "7.0.1") (lsp-docker "0.0"))
 ;; Version: 0.1.0
 
 ;; This program is free software; you can redistribute it and/or modify
