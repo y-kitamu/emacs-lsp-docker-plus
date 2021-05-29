@@ -1,0 +1,10 @@
+version: "3.7"
+
+services:
+  rust:
+    hostname: rust_docker
+    image: rust-language-server
+    build:
+      context: .
+      args:
+        user: ${USER}
