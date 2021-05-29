@@ -146,6 +146,17 @@ This function is advice function of `lsp-docker-launch-new-container'."
     (message (lsp-docker+-format "docker command = %s" command))
     command))
 
+(defun lsp-docker+-exec-in-container (&rest _)
+  "Return the docker command to run language server in existing container."
+  (let ((command
+         (remove "" (split-string
+                     (format "docker exec %s -i %s %s"
+                             (substitute-in-file-name lsp-docker+-docker-options)
+                             lsp-docker+-container-name
+                             lsp-docker+-server-command)))))
+    (message (lsp-docker+-format "docker command = %s" command))
+    command))
+
 (cl-defun lsp-docker+-register-client (&rest _)
   "Advice function of `lsp-docker-register-client'.
 function (`lsp-docker-register-client') and not used in this function.
