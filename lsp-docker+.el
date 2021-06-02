@@ -111,7 +111,8 @@ and not used in this function."
   (hack-dir-local-variables-non-file-buffer)
   (cond ((-any? 'null (list lsp-docker+-server-id
                             lsp-docker+-docker-server-id
-                            lsp-docker+-server-command))
+                            lsp-docker+-server-command
+                            lsp-docker+-path-mappings))
          (message (lsp-docker+-format "Skip registering lsp-docker client. Some args are nil.")))
         (t
          (lsp-docker+-init-clients
@@ -169,10 +170,7 @@ docker-image-id       -> `lsp-docker+-image-id'
 docker-container-name -> `lsp-docker+-container-name'
 priority              -> `lsp-docker+-priority'
 server-command        -> `lsp-docker+-server-command'
-launch-server-cmd-fn  -> `lsp-docker+-server-cmd-fn'
-
-I wrote this function because `lsp-docker-register-client'
-don't work well with Rust langauge servers."
+launch-server-cmd-fn  -> `lsp-docker+-server-cmd-fn'"
   (message (lsp-docker+-format
             "Start register lsp-docker client.
   docker-container-name = %s, docker-image-id = %s
