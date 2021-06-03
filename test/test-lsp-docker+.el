@@ -82,6 +82,7 @@ ARGS is arguments of FUNC."
   (lsp-docker+-run-on-c++-config
    (lambda ()
      (let ((command (lsp-docker+-exec-in-container))
-           (expect '("docker" "exec" "-u" "test_user" "-i" "lsp-docker" "ccls")))))))
+           (expect '("docker" "exec" "-u" "test_user" "-i" "lsp-docker" "ccls")))
+       (cl-mapcar (lambda (x y) (should (equal x y))) command expect)))))
 
 ;;; test-lsp-docker+.el ends here
