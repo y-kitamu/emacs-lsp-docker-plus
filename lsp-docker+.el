@@ -89,6 +89,11 @@ Environment variables can be used."
   :type 'function
   :safe #'functionp)
 
+(defcustom lsp-docker+-client-configs nil
+  "List of client settings."
+  :type 'list
+  :safe #'listp)
+
 (defun lsp-docker+-format (format-str &rest rest)
   "Wrapper function of `format' for logging.
 FORMAT-STR is format string (first argument of `format').
@@ -125,6 +130,18 @@ and not used in this function."
                                    :docker-server-id lsp-docker+-docker-server-id
                                    :server-command lsp-docker+-server-command))))))
 
+(defun lsp-docker+-register-before-lsp (&rest rest)
+  "Add lsp client.  REST is not used."
+  (hack-dir-local-variables-non-file-buffer)
+  (if (not (null lsp-docker+-client-configs))
+      (lsp-docker+-init-clients
+       :path-mappings lsp-docker+-path-mappings
+       :default-docker-image-id lsp-docker+-image-id
+       :default-docker-container-name lsp-docker+-container-name
+       :priority lsp-docker+-priority
+       :client-configs lsp-docker+-client-configs)))
+
+
 (defun lsp-docker+-launch-new-container (&rest _)
   "Return the docker command to be executed on host.
 This function is advice function of `lsp-docker-launch-new-container'."
@@ -147,29 +164,30 @@ This function is advice function of `lsp-docker-launch-new-container'."
     (message (lsp-docker+-format "docker command = %s" command))
     command))
 
-(defun lsp-docker+-exec-in-container (&rest _)
-  "Return the docker command to run language server in existing container."
+(defun lsp-docker+-exec-in-container (docker-container-name server-command)
+  "Return the docker command to run language server in existing container.
+DOCKER-CONTAINER-NAME and SERVER-COMMAND is used."
   (let ((command
          (remove "" (split-string
                      (format "docker exec %s -i %s %s"
                              (substitute-in-file-name lsp-docker+-docker-options)
-                             lsp-docker+-container-name
-                             lsp-docker+-server-command)))))
+                             docker-container-name
+                             server-command)))))
     (message (lsp-docker+-format "docker command = %s" command))
     command))
 
-(cl-defun lsp-docker+-register-client (&rest _)
+(cl-defun lsp-docker+-register-client (&key docker-container-name server-command path-mappings)
   "Advice function of `lsp-docker-register-client'.
-function (`lsp-docker-register-client') and not used in this function.
-All the arguments usd in original function is replaced by custom variables.
+Original function is not called in this function.
+All the arguments used in original function is replaced by custom variables.
 Correspondence is as follows.
 server-id             -> `lsp-docker+-server-id'
 docker-server-id      -> `lsp-docker+-docker-server-id'
-path-mappings         -> `lsp-docker+-path-mappings'
+PATH-MAPPINGS
 docker-image-id       -> `lsp-docker+-image-id'
-docker-container-name -> `lsp-docker+-container-name'
+DOCKER-CONTAINER-NAME
 priority              -> `lsp-docker+-priority'
-server-command        -> `lsp-docker+-server-command'
+SERVER-COMMAND
 launch-server-cmd-fn  -> `lsp-docker+-server-cmd-fn'"
   (message (lsp-docker+-format
             "Start register lsp-docker client.
@@ -186,10 +204,10 @@ launch-server-cmd-fn  -> `lsp-docker+-server-cmd-fn'"
           :new-connection (plist-put
                            (lsp-stdio-connection
                             (lambda ()
-                              (funcall lsp-docker+-server-cmd-fn)))
+                              (funcall lsp-docker+-server-cmd-fn docker-container-name server-command)))
                            :test? (lambda (&rest _)
                                     (-any? (-lambda ((dir)) (f-ancestor-of? dir (buffer-file-name)))
-                                           (lsp-docker+-replace-env-vars lsp-docker+-path-mappings))))
+                                           (lsp-docker+-replace-env-vars path-mappings))))
           :ignore-regexps (lsp--client-ignore-regexps client)
           :ignore-messages (lsp--client-ignore-messages client)
           :notification-handlers (lsp--client-notification-handlers client)
@@ -212,9 +230,9 @@ launch-server-cmd-fn  -> `lsp-docker+-server-cmd-fn'"
           :remote? (lsp--client-remote? client)
           :completion-in-comments? (lsp--client-completion-in-comments? client)
           :path->uri-fn (-partial #'lsp-docker--path->uri (lsp-docker+-replace-env-vars
-                                                           lsp-docker+-path-mappings))
+                                                           path-mappings))
           :uri->path-fn (-partial #'lsp-docker--uri->path
-                                  (lsp-docker+-replace-env-vars lsp-docker+-path-mappings)
+                                  (lsp-docker+-replace-env-vars path-mappings)
                                   lsp-docker+-container-name)
           :environment-fn (lsp--client-environment-fn client)
           :after-open-fn (lsp--client-after-open-fn client)
@@ -254,7 +272,9 @@ CLIENT-CONFIGS is a list of configurations for the clients to be registered."
                   (lsp-docker+-path-mappings path-mappings)
                   (lsp-docker+-server-cmd-fn #'lsp-docker-launch-new-container)
                   (lsp-docker+-priority priority))
-              (lsp-docker+-register-client)))
+              (lsp-docker+-register-client :docker-container-name lsp-docker+-container-name
+                                           :server-command lsp-docker+-server-command
+                                           :path-mappings path-mappings)))
    client-configs))
 
 ;;;###autoload
@@ -262,14 +282,16 @@ CLIENT-CONFIGS is a list of configurations for the clients to be registered."
   "Enable lsp-docker+.
 This function add advice function `lsp-docker+-before-lsp' to `lsp'"
   (interactive)
-  (advice-add #'lsp :before #'lsp-docker+-before-lsp))
+  (advice-add #'lsp :before #'lsp-docker+-before-lsp)
+  (advice-add #'lsp :before #'lsp-docker+-register-before-lsp))
 
 ;;;###autoload
 (defun lsp-docker+-disable ()
   "Disable lsp-docker+.
 This function remove advice function `lsp-docker+-before-lsp' from `lsp'"
   (interactive)
-  (advice-remove #'lsp #'lsp-docker+-before-lsp))
+  (advice-remove #'lsp #'lsp-docker+-before-lsp)
+  (advice-remove #'lsp #'lsp-docker+-register-before-lsp))
 
 (provide 'lsp-docker+)
 ;;; lsp-docker+.el ends here
